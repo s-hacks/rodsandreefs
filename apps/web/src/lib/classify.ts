@@ -210,7 +210,12 @@ function inferCity(req: RankRequest): City | undefined {
   }
   if (counts.size > 0) {
     const [key, best] = [...counts.entries()].sort((a, b) => b[1].n - a[1].n)[0]!;
-    return { key, label: best.label };
+    // Places alone only decide the city when most of them agree. Shops spread
+    // across suburbs (Vestavia Hills, Bessemer, Leeds) say nothing about the user.
+    const places = req.places?.length ?? 0;
+    if (best.n >= 5 || best.n >= Math.max(2, Math.ceil(places / 2))) {
+      return { key, label: best.label };
+    }
   }
 
   const inQuery = req.query.match(/\b(?:in|near|around)\s+([a-z][a-z .'-]+?)(?:,?\s+[a-z]{2})?$/i);
