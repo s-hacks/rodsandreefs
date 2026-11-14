@@ -15,10 +15,39 @@ When trade-offs come up, pick the fast path and mention it briefly rather than a
 
 ## Project
 
-- **One-liner:** a browser extension that supports local businesses. When it's on, locally owned businesses are moved to the top of your search results. Example: searching "fishing tackle shop" in Tuscaloosa puts Crimson Pride Hunting & Fishing and Woods & Water above Academy Sports.
-- **Scope:** any business type, any sector, any US location.
-- **Demo flow:** _TBD_ (e.g. search with extension off → turn it on → same search shows local shops on top with a "Local" badge)
-- **Open questions:** how we decide "local" (chain list? Places/Yelp data? ownership data?), how we get the user's location, and which search engines beyond Google.
+**Goal:** help people support local businesses without changing how they shop. Search engines push national chains, big-box retailers, online megastores and directories (Yelp, etc.) to the top, so independent local shops get buried. We fix that at the moment someone is deciding where to spend money.
+
+**Description:** a browser extension with an on/off toggle. When it's on, it rewrites the search results page so locally owned, independent businesses near the user come first and are clearly badged as "Local". Chains, marketplaces and aggregators are pushed down.
+
+- **Example:** in Tuscaloosa, searching "fishing tackle shop" should put Crimson Pride Hunting & Fishing and Woods & Water at the top, not Academy Sports.
+- **Scope:** any business type, any sector, any US location. Nothing hard-coded to one city or category in the real logic.
+- **Search engine:** Google first. Others later, if time allows.
+- **Demo flow (draft):** search with the extension off and see chains on top → toggle it on → same search, local shops on top with badges.
+
+### What the Google results page actually looks like
+
+From a real search ("fishing tackle shop" in Birmingham, AL), top to bottom:
+1. **Places / map pack.** Google already lists local shops here, but it mixes in a **sponsored chain** (e.g. Bass Pro).
+2. **Organic links.** These are mostly aggregators and chains (Yelp "Top 10", Walmart, Tackle Warehouse (online only), Reddit). Often **none** of them is a local shop.
+3. **Sponsored ads** (Cabela's, etc.).
+4. **"In stores nearby" product carousel.** Entirely chains (Walmart, Academy, Dick's, Bass Pro).
+
+Reordering organic links alone won't deliver the demo. The highest-impact targets are probably the Places pack (badge independents, demote or hide sponsored chains) and the product carousel (demote chain products), plus surfacing local shops that aren't in the organic links at all.
+
+### Deciding "local" (the core hard problem)
+
+- Current logic in `apps/web/src/app/api/rank/route.ts` is a `// DEMO:` placeholder. It counts any domain not on a small chain/aggregator blocklist as local, so it wrongly boosts online-only retailers like Tackle Warehouse.
+- Real signals to use: a physical location near the user (Google Places / Yelp API), whether the same business name has many locations (chain detection), and whether it's a directory or marketplace rather than a business.
+- User location: infer it from the query text ("in tuscaloosa"), the "Birmingham, AL" location Google shows on the page, or the user's IP or browser geolocation.
+
+### Current status
+
+- Pipeline works: content script → background worker → `/api/rank` → reorder and badge. It's verified in Chrome against a local replica of a results page, but **not yet verified on a live Google page** (Google blocks automated browsers, so check by hand).
+- Classification lives in `apps/web/src/lib/classify.ts` and needs no API key: businesses in the Places pack are near the user already, and chains are detected with ~5,500 US brand names from OpenStreetMap's Name Suggestion Index (`src/data/chains.json`, regenerate with `scripts/build-chains.mjs`). Organic links are local only with positive evidence (matches an independent place, or names the user's city); otherwise they're left alone.
+- Handled: organic links, the Places pack (badge, chains sunk), sponsored blocks (collapsed), plus an injected "Local picks" panel. The toggle applies live and reverts the page exactly.
+- The Places pack and ad selectors in `SELECTORS` are from memory of Google's markup. If the picks panel doesn't appear on a live page, those are the first thing to fix.
+- For debugging, open DevTools on the results page and filter the console by `[shop-local]` to see results found, the API reply and boosted results.
+- WXT's dev server is pinned to port 3001. On its default (3000) it shadowed the API on `localhost` and every rank call returned 404.
 
 ## Architecture
 

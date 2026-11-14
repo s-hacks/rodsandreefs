@@ -1,11 +1,34 @@
 import { useEffect, useState } from 'react';
 import { enabledItem } from '@/utils/config';
+import type { ContentMessage, PageStats } from '@/utils/messages';
+
+/** `null` means the active tab isn't a Google results page (no content script). */
+async function fetchStats(): Promise<PageStats | null> {
+  try {
+    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id == null) return null;
+    const message: ContentMessage = { type: 'get-stats' };
+    return ((await browser.tabs.sendMessage(tab.id, message)) as PageStats | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export default function App() {
   const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [stats, setStats] = useState<PageStats | null>(null);
 
   useEffect(() => {
     enabledItem.getValue().then(setEnabled);
+    // The page updates live after a toggle, so keep the numbers fresh.
+    let alive = true;
+    const poll = () => fetchStats().then((s) => alive && setStats(s));
+    poll();
+    const timer = setInterval(poll, 500);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
   }, []);
 
   async function toggle() {
@@ -14,18 +37,80 @@ export default function App() {
     await enabledItem.setValue(next);
   }
 
+  const on = enabled === true;
+
   return (
-    <main className="popup">
-      <h1>Shop Local</h1>
-      <p>Boost locally owned businesses to the top of your searches.</p>
-      <button
-        className={enabled ? 'toggle on' : 'toggle'}
-        onClick={toggle}
-        disabled={enabled === null}
-      >
-        {enabled ? 'On' : 'Off'}
-      </button>
-      <small>Changes apply on your next search.</small>
+    <main className={on ? 'popup on' : 'popup'}>
+      <header className="hero">
+        <div className="brand">
+          <span className="mark" aria-hidden="true">
+            ★
+          </span>
+          <div>
+            <h1>Shop Local</h1>
+            <p>Independent shops first.</p>
+          </div>
+        </div>
+        <button
+          className="switch"
+          role="switch"
+          aria-checked={on}
+          aria-label="Boost local businesses"
+          onClick={toggle}
+          disabled={enabled === null}
+        >
+          <span className="knob" />
+        </button>
+      </header>
+
+      <section className="body">
+        <Status enabled={enabled} stats={stats} />
+      </section>
+
+      <footer>{on ? 'Applies instantly to this search.' : 'Flip the switch to put locals on top.'}</footer>
     </main>
+  );
+}
+
+function Status({ enabled, stats }: { enabled: boolean | null; stats: PageStats | null }) {
+  if (enabled === null) return <p className="note"> </p>;
+  if (!enabled) {
+    return <p className="note">Paused. You're seeing Google's usual order, chains and all.</p>;
+  }
+  if (!stats) {
+    return <p className="note">Search for something on Google and local shops will rise to the top.</p>;
+  }
+  if (stats.status === 'error') {
+    return (
+      <p className="note error">
+        Can't reach the Shop Local server. Start it with <code>npm run dev:web</code>, then reload
+        the page.
+      </p>
+    );
+  }
+  if (stats.status === 'loading') return <p className="note pulse">Finding local shops…</p>;
+  if (stats.status === 'off' || (stats.local === 0 && stats.demoted === 0 && stats.ads === 0)) {
+    return <p className="note">Nothing to reorder on this search.</p>;
+  }
+
+  return (
+    <>
+      <div className="stats">
+        <Stat value={stats.local} label={stats.local === 1 ? 'local result' : 'local results'} primary />
+        <Stat value={stats.demoted} label="pushed down" />
+        <Stat value={stats.ads} label={stats.ads === 1 ? 'ad block hidden' : 'ad blocks hidden'} />
+      </div>
+      {stats.location && <p className="where">Near {stats.location}</p>}
+    </>
+  );
+}
+
+function Stat({ value, label, primary }: { value: number; label: string; primary?: boolean }) {
+  return (
+    <div className={primary ? 'stat primary' : 'stat'}>
+      {/* Re-keyed so the number pops whenever it changes. */}
+      <strong key={value}>{value}</strong>
+      <span>{label}</span>
+    </div>
   );
 }
