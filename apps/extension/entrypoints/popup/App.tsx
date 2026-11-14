@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { enabledItem } from '@/utils/config';
+import { useEffect, useRef, useState } from 'react';
+import { cityItem, enabledItem } from '@/utils/config';
 import type { ContentMessage, PageStats } from '@/utils/messages';
 
 /** `null` means the active tab isn't a Google results page (no content script). */
@@ -17,9 +17,12 @@ async function fetchStats(): Promise<PageStats | null> {
 export default function App() {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [stats, setStats] = useState<PageStats | null>(null);
+  const [city, setCity] = useState('');
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     enabledItem.getValue().then(setEnabled);
+    cityItem.getValue().then(setCity);
     // The page updates live after a toggle, so keep the numbers fresh.
     let alive = true;
     const poll = () => fetchStats().then((s) => alive && setStats(s));
@@ -35,6 +38,13 @@ export default function App() {
     const next = !enabled;
     setEnabled(next);
     await enabledItem.setValue(next);
+  }
+
+  // Saving re-ranks the open page, so wait until typing pauses.
+  function editCity(value: string) {
+    setCity(value);
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => void cityItem.setValue(value.trim()), 700);
   }
 
   const on = enabled === true;
@@ -67,6 +77,24 @@ export default function App() {
         <Status enabled={enabled} stats={stats} />
       </section>
 
+      <label className="city" htmlFor="city">
+        <span>Your city</span>
+        <input
+          id="city"
+          type="text"
+          value={city}
+          placeholder="e.g. Tuscaloosa, AL"
+          autoComplete="address-level2"
+          spellCheck={false}
+          onChange={(e) => editCity(e.target.value)}
+          onBlur={() => {
+            clearTimeout(saveTimer.current);
+            void cityItem.setValue(city.trim());
+          }}
+        />
+        <small>Only used when the search page doesn't show a location.</small>
+      </label>
+
       <footer>{on ? 'Applies instantly to this search.' : 'Flip the switch to put locals on top.'}</footer>
     </main>
   );
@@ -78,7 +106,7 @@ function Status({ enabled, stats }: { enabled: boolean | null; stats: PageStats 
     return <p className="note">Paused. You're seeing Google's usual order, chains and all.</p>;
   }
   if (!stats) {
-    return <p className="note">Search for something on Google and local shops will rise to the top.</p>;
+    return <p className="note">Search on Google or DuckDuckGo and local shops will rise to the top.</p>;
   }
   if (stats.status === 'error') {
     return (

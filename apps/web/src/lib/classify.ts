@@ -200,6 +200,20 @@ function inferCity(req: RankRequest): City | undefined {
   };
   for (const place of req.places ?? []) scan(place.details ?? "", 1);
 
+  // A city the user typed ("tackle shop tuscaloosa") beats where the shops or
+  // the page say they are. Results confirm it's a city: "... in Tuscaloosa, AL".
+  const query = ` ${normalizeName(req.query)} `;
+  for (const r of req.results) {
+    for (const m of `${r.title} ${r.snippet ?? ""}`.matchAll(CITY_STATE)) {
+      const key = normalizeName(m[1]!);
+      if (key.length >= 3 && query.includes(` ${key} `)) {
+        const entry = counts.get(key) ?? { n: 0, label: `${m[1]}, ${m[2]}` };
+        entry.n = Math.max(entry.n, 6);
+        counts.set(key, entry);
+      }
+    }
+  }
+
   if (req.location && "text" in req.location) {
     const text = req.location.text.trim();
     scan(text, 5);

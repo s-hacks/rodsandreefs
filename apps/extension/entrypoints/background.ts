@@ -24,12 +24,14 @@ export default defineBackground(() => {
 /** Shows the number of local shops found on the toolbar icon for that tab. */
 async function setBadge(tabId: number, stats: PageStats) {
   try {
+    // Firefox builds are MV2, where the toolbar API is `browserAction`.
+    const action = browser.action ?? browser.browserAction;
     const text = stats.status === 'error' ? '!' : stats.local > 0 ? String(stats.local) : '';
-    await browser.action.setBadgeBackgroundColor({
+    await action.setBadgeBackgroundColor({
       tabId,
       color: stats.status === 'error' ? '#b3261e' : '#1f7a4d',
     });
-    await browser.action.setBadgeText({ tabId, text });
+    await action.setBadgeText({ tabId, text });
   } catch {
     // The tab closed before we could update it.
   }

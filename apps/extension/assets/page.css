@@ -40,7 +40,10 @@
 .rr-chip {
   display: inline-flex;
   align-items: center;
+  flex: none;
+  align-self: flex-start;
   width: fit-content;
+  height: auto;
   margin: 0 0 6px;
   padding: 2px 10px;
   border-radius: 999px;

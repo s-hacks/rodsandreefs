@@ -8,3 +8,8 @@ export const API_BASE_URL: string =
 export const enabledItem = storage.defineItem<boolean>('local:enabled', {
   fallback: true,
 });
+
+/** The user's city, e.g. "Tuscaloosa, AL". Used only when the page shows none. */
+export const cityItem = storage.defineItem<string>('local:city', {
+  fallback: '',
+});

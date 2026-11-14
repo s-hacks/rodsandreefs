@@ -10,6 +10,9 @@
     "dev:web": "npm run dev -w apps/web",
     "dev:ext": "npm run dev -w apps/extension",
     "build": "npm run build -w apps/web && npm run build -w apps/extension",
+    "build:browsers": "npm run build -w apps/extension && npm run build:firefox -w apps/extension && npm run build:edge -w apps/extension",
+    "dev:edge": "npm run dev:edge -w apps/extension",
+    "dev:firefox": "npm run dev:firefox -w apps/extension",
     "lint": "npm run lint -w apps/web",
     "typecheck": "npm run compile -w apps/extension && npm run typecheck -w apps/web"
   },

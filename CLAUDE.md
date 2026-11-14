@@ -45,6 +45,8 @@ Reordering organic links alone won't deliver the demo. The highest-impact target
 - Pipeline works: content script → background worker → `/api/rank` → reorder and badge. It's verified in Chrome against a local replica of a results page, but **not yet verified on a live Google page** (Google blocks automated browsers, so check by hand).
 - Classification lives in `apps/web/src/lib/classify.ts` and needs no API key: businesses in the Places pack are near the user already, and chains are detected with ~5,500 US brand names from OpenStreetMap's Name Suggestion Index (`src/data/chains.json`, regenerate with `scripts/build-chains.mjs`). Organic links are local only with positive evidence (matches an independent place, or names the user's city); otherwise they're left alone.
 - Handled: organic links, the Places pack (badge, chains sunk), sponsored blocks (collapsed), plus an injected "Local picks" panel. The toggle applies live and reverts the page exactly.
+- **Search engines:** Google (`entrypoints/google.content.ts`) and DuckDuckGo (`entrypoints/duckduckgo.content.ts`, verified live). Each only scrapes its own markup. All page changes live in `utils/engine.ts`. DuckDuckGo shows no location, but its map module (Apple Maps, located from the IP and not stored) loads a few seconds late, and the script re-runs when it appears. To add an engine, write a new `*.content.ts` that returns a `Scrape`.
+- **City:** taken from the page, then from a city named in the query, then from the "Your city" box in the popup (`cityItem`).
 - The Places pack and ad selectors in `SELECTORS` are from memory of Google's markup. If the picks panel doesn't appear on a live page, those are the first thing to fix.
 - For debugging, open DevTools on the results page and filter the console by `[shop-local]` to see results found, the API reply and boosted results.
 - WXT's dev server is pinned to port 3001. On its default (3000) it shadowed the API on `localhost` and every rank call returned 404.
@@ -80,6 +82,8 @@ npm run dev          # runs web (localhost:3000) + extension dev mode together
 npm run dev:web      # API only
 npm run dev:ext      # extension only (WXT opens a Chrome window with it loaded, hot-reloads)
 npm run build        # builds both; the extension goes to apps/extension/.output/chrome-mv3
+npm run build:browsers  # extension for Chrome (chrome-mv3), Firefox (firefox-mv2) and Edge (edge-mv3)
+npm run dev:edge     # / dev:firefox: like dev:ext, but opens that browser
 npm run typecheck    # tsc for both apps
 npm run lint         # ESLint (web)
 ```
