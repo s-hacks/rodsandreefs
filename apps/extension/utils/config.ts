@@ -9,6 +9,11 @@ export const enabledItem = storage.defineItem<boolean>('local:enabled', {
   fallback: true,
 });
 
+/** Running count of local results surfaced, shown in the popup. */
+export const totalItem = storage.defineItem<number>('local:total', {
+  fallback: 0,
+});
+
 /** The user's city, e.g. "Tuscaloosa, AL". Used only when the page shows none. */
 export const cityItem = storage.defineItem<string>('local:city', {
   fallback: '',

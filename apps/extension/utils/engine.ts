@@ -1,6 +1,6 @@
 import type { PlaceResult, RankResponse, RankedResult, SearchResult } from '@rodsandreefs/shared';
 import type { ContentScriptContext } from '#imports';
-import { cityItem, enabledItem } from '@/utils/config';
+import { cityItem, enabledItem, totalItem } from '@/utils/config';
 import {
   EMPTY_STATS,
   type BackgroundMessage,
@@ -51,6 +51,8 @@ let undo: (() => void)[] = [];
 /** Bumped on every run/revert so a slow API reply can't apply to a newer state. */
 let generation = 0;
 let container: HTMLElement | null = null;
+/** True once this search has been added to the popup's running total. */
+let counted = false;
 
 /**
  * Wires a content script up: popup stats, the live on/off toggle, and in-page
@@ -73,6 +75,7 @@ export async function startEngine(
 
   // Search pages often swap results in place instead of loading a new page.
   ctx.addEventListener(window, 'wxt:locationchange', () => {
+    counted = false;
     revert();
     ctx.setTimeout(rerun, 800);
   });
@@ -226,9 +229,15 @@ function apply(page: Scrape, data: RankResponse) {
   });
 
   log(`surfaced ${localBlocks.length} links + ${localPlaces.length} places, demoted ${demoted}`);
+  const local = localBlocks.length + localPlaces.length;
+  showToast(local, demoted);
+  if (!counted && local > 0) {
+    counted = true;
+    void totalItem.getValue().then((n) => totalItem.setValue(n + local));
+  }
   setStats({
     status: 'done',
-    local: localBlocks.length + localPlaces.length,
+    local,
     demoted,
     ads,
     location: data.location,
@@ -256,6 +265,14 @@ function moveBefore(el: HTMLElement, ref: ChildNode) {
   el.before(placeholder);
   ref.before(el);
   undo.push(() => placeholder.replaceWith(el));
+}
+
+function siteLabel(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return 'Website';
+  }
 }
 
 function reorderPlaces(places: PlaceBlock[], rank: Map<string, RankedResult>) {
@@ -292,6 +309,25 @@ function collapseAd(ad: HTMLElement) {
   });
 }
 
+/** A brief note at the bottom of the page saying what just changed. */
+function showToast(local: number, demoted: number) {
+  if (local === 0 && demoted === 0) return;
+  const toast = document.createElement('div');
+  toast.className = 'rr-toast';
+  toast.setAttribute('role', 'status');
+  const lead = document.createElement('strong');
+  lead.textContent =
+    local > 0 ? `★ ${local} local ${local === 1 ? 'pick' : 'picks'} lifted` : 'No local shops here';
+  toast.append(lead);
+  if (demoted > 0) toast.append(` · ${demoted} chains and directories pushed down`);
+  document.body.append(toast);
+  const timer = setTimeout(() => toast.remove(), 5200);
+  undo.push(() => {
+    clearTimeout(timer);
+    toast.remove();
+  });
+}
+
 function buildPanel(
   picks: PlaceBlock[],
   where: string | undefined,
@@ -317,6 +353,12 @@ function buildPanel(
     const card = node('div', 'rr-card');
     card.style.setProperty('--rr-i', String(i));
     card.append(node('div', 'rr-card-name', pick.place.name));
+    if (pick.place.website) {
+      // The shop's own site, shown like a search result's address.
+      const site = node('a', 'rr-card-site', siteLabel(pick.place.website));
+      site.href = pick.place.website;
+      card.append(site);
+    }
     for (const line of pick.lines.slice(0, 2)) card.append(node('div', 'rr-card-line', line));
 
     const actions = node('div', 'rr-card-actions');

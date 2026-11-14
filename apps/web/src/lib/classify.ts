@@ -131,7 +131,11 @@ function domainKind(domain: string): ResultKind | undefined {
   if (onList(d, ONLINE_DOMAINS)) return "online";
   if (onList(d, CHAIN_DOMAINS)) return "chain";
   if (onList(d, DIRECTORY_DOMAINS) || /\.(gov|edu|mil)$/.test(d)) return "directory";
+  // "locations.pjscoffee.com": only multi-location brands have a store locator.
+  if (/^(locations?|stores?|restaurants|order)\./.test(d)) return "chain";
   const label = domainLabel(d).replace(/[^a-z0-9]/g, "");
+  // Tourism boards ("visittuscaloosa.com") list businesses; they aren't one.
+  if (/^(visit|explore|discover)[a-z]{4,}/.test(label)) return "directory";
   if (label.length >= 5 && CHAIN_SQUASHED.has(label)) return "chain";
   return undefined;
 }
@@ -144,7 +148,9 @@ function titleNamesChain(title: string): boolean {
     .some((seg) => isChainName(seg));
 }
 
-const LISTICLE = /^(the\s+)?(top|best)\b|\b(top|best)\s+\d+\b|\bnear me\b/i;
+// "Top 10 ...", "... near me", and plural round-ups like "Coffee Shops in Tuscaloosa".
+const LISTICLE =
+  /^(the\s+)?(top|best)\b|\b(top|best)\s+\d+\b|\bnear me\b|\b(shops|stores|restaurants|cafes|bars|places|spots|supplies|services|companies|dealers|businesses)\s+(in|near|around)\s+[A-Z]/i;
 
 const NAME_STOPWORDS = new Set(["the", "of", "llc", "inc", "co", "company", "shop", "store"]);
 
@@ -228,7 +234,12 @@ function inferCity(req: RankRequest): City | undefined {
     // across suburbs (Vestavia Hills, Bessemer, Leeds) say nothing about the user.
     const places = req.places?.length ?? 0;
     if (best.n >= 5 || best.n >= Math.max(2, Math.ceil(places / 2))) {
-      return { key, label: best.label };
+      // Some pages shout the city ("BIRMINGHAM, AL"); show it in title case.
+      const label = best.label.replace(
+        /^[^,]+/,
+        (name) => name.toLowerCase().replace(/\b[a-z]/g, (ch) => ch.toUpperCase()),
+      );
+      return { key, label };
     }
   }
 

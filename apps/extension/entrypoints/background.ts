@@ -1,5 +1,5 @@
 import { API_PATHS, type RankRequest, type RankResponse } from '@rodsandreefs/shared';
-import { API_BASE_URL } from '@/utils/config';
+import { API_BASE_URL, enabledItem } from '@/utils/config';
 import type { BackgroundMessage, BackgroundReply, PageStats } from '@/utils/messages';
 
 // Content scripts can't call our API directly (page CORS), so they message us.
@@ -18,6 +18,11 @@ export default defineBackground(() => {
       });
     // Keep the channel open for the async sendResponse (required in Chrome).
     return true;
+  });
+
+  // Alt+Shift+L flips the switch; open pages react through storage.
+  browser.commands?.onCommand.addListener(async (command) => {
+    if (command === 'toggle-local') await enabledItem.setValue(!(await enabledItem.getValue()));
   });
 });
 

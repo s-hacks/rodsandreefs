@@ -10,6 +10,8 @@ const SELECTORS = {
   placeCard: '[data-layout="maps_places"] li article',
   placeName: 'h2',
   placeLine: 'p',
+  /** The request that carries the map module's data, including websites. */
+  placeData: /\/local\.js\?.*tg=maps_places/,
   ads: 'li[data-layout="ad"], [data-testid="ad"], .result--ad',
 };
 
@@ -28,6 +30,10 @@ export default defineContentScript({
       await waitFor(() => document.querySelector(SELECTORS.placeCard), 2500);
       const places = collectPlaces();
       placesSeen = places.length;
+      if (places.length) {
+        const sites = await fetchWebsites();
+        for (const p of places) p.place.website = sites.get(key(p.place.name));
+      }
 
       return {
         query,
@@ -76,6 +82,36 @@ function collectResults(): ResultBlock[] {
     });
   }
   return blocks;
+}
+
+const key = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/**
+ * The map cards don't link to the shops' own sites, but the data behind them
+ * does. Re-read the request the page already made (same origin, so no extra
+ * permission) and pull each shop's website out of it.
+ */
+async function fetchWebsites(): Promise<Map<string, string>> {
+  const sites = new Map<string, string>();
+  try {
+    const entry = performance
+      .getEntriesByType('resource')
+      .findLast((e) => SELECTORS.placeData.test(e.name));
+    if (!entry) return sites;
+    const text = await (await fetch(entry.name, { signal: AbortSignal.timeout(4000) })).text();
+    const data = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1)) as {
+      results?: { name?: string; website?: string }[];
+    };
+    for (const r of data.results ?? []) {
+      // A Yelp or Facebook page isn't the shop's own site.
+      if (!r.name || !r.website || !/^https?:\/\//.test(r.website)) continue;
+      if (/\/\/([\w-]+\.)*(yelp|facebook|tripadvisor|instagram)\.com\//.test(r.website)) continue;
+      sites.set(key(r.name), r.website);
+    }
+  } catch {
+    // No websites this time; the panel still works without them.
+  }
+  return sites;
 }
 
 function collectPlaces(): PlaceBlock[] {

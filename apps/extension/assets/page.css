@@ -186,6 +186,22 @@
   overflow-wrap: anywhere;
 }
 
+.rr-panel a.rr-card-site {
+  display: block;
+  overflow: hidden;
+  color: var(--rr-green, #1f7a4d);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rr-panel a.rr-card-site:hover {
+  text-decoration: underline;
+}
+
 .rr-card-line {
   overflow: hidden;
   color: var(--rr-muted);
@@ -239,5 +255,52 @@
   .rr-card,
   .rr-dim {
     transition: none;
+  }
+}
+
+/* ---------- toast: what just changed ---------- */
+
+.rr-toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  z-index: 2147483647;
+  max-width: calc(100vw - 32px);
+  padding: 10px 18px;
+  border: 1px solid var(--rr-green-line);
+  border-radius: 999px;
+  background: var(--rr-surface);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.18);
+  color: var(--rr-muted);
+  font: 500 13px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  pointer-events: none;
+  animation: rr-toast 5.2s var(--rr-ease) both;
+}
+
+.rr-toast strong {
+  color: var(--rr-green-ink);
+  font-weight: 700;
+}
+
+@keyframes rr-toast {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 16px) scale(0.96);
+  }
+  8%,
+  90% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-toast {
+    animation: none;
+    transform: translateX(-50%);
   }
 }

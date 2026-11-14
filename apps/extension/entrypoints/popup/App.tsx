@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { cityItem, enabledItem } from '@/utils/config';
+import { cityItem, enabledItem, totalItem } from '@/utils/config';
 import type { ContentMessage, PageStats } from '@/utils/messages';
 
 /** `null` means the active tab isn't a Google results page (no content script). */
@@ -18,11 +18,15 @@ export default function App() {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [stats, setStats] = useState<PageStats | null>(null);
   const [city, setCity] = useState('');
+  const [total, setTotal] = useState(0);
   const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     enabledItem.getValue().then(setEnabled);
     cityItem.getValue().then(setCity);
+    totalItem.getValue().then(setTotal);
+    // The keyboard shortcut and new searches change these while we're open.
+    const unwatch = [enabledItem.watch(setEnabled), totalItem.watch(setTotal)];
     // The page updates live after a toggle, so keep the numbers fresh.
     let alive = true;
     const poll = () => fetchStats().then((s) => alive && setStats(s));
@@ -31,6 +35,7 @@ export default function App() {
     return () => {
       alive = false;
       clearInterval(timer);
+      unwatch.forEach((fn) => fn());
     };
   }, []);
 
@@ -95,7 +100,18 @@ export default function App() {
         <small>Only used when the search page doesn't show a location.</small>
       </label>
 
-      <footer>{on ? 'Applies instantly to this search.' : 'Flip the switch to put locals on top.'}</footer>
+      <footer>
+        {total > 0 && (
+          <p className="total">
+            <strong key={total}>★ {total.toLocaleString()}</strong> local{' '}
+            {total === 1 ? 'pick' : 'picks'} lifted so far
+          </p>
+        )}
+        <p>
+          {on ? 'Applies instantly.' : 'Flip the switch to put locals on top.'} Toggle anywhere
+          with <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>L</kbd>
+        </p>
+      </footer>
     </main>
   );
 }

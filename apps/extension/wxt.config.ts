@@ -8,7 +8,21 @@ export default defineConfig({
     description: 'Puts local businesses at the top of your search results.',
     permissions: ['storage'],
     // The background worker calls our API; a host permission avoids CORS issues.
-    host_permissions: ['http://localhost:3000/*', 'http://127.0.0.1:3000/*'],
+    host_permissions: [
+      'http://localhost:3000/*',
+      'http://127.0.0.1:3000/*',
+      // A deployed API: build with WXT_API_BASE_URL=https://your-app.vercel.app
+      ...(process.env.WXT_API_BASE_URL
+        ? [`${new URL(process.env.WXT_API_BASE_URL).origin}/*`]
+        : []),
+    ],
+    // Toggle from any page, handy on stage.
+    commands: {
+      'toggle-local': {
+        suggested_key: { default: 'Alt+Shift+L' },
+        description: 'Turn Shop Local on or off',
+      },
+    },
     // Firefox wants a stable ID (storage) and a data-collection statement.
     ...(browser === 'firefox' && {
       browser_specific_settings: {
