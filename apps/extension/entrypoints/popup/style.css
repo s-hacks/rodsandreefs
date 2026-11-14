@@ -1,0 +1,47 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+body {
+  margin: 0;
+  width: 280px;
+}
+
+.popup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 18px;
+}
+
+p {
+  margin: 0;
+  font-size: 13px;
+  color: #555;
+}
+
+.toggle {
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #ddd;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.toggle.on {
+  background: #2e7d32;
+  color: #fff;
+}
+
+small {
+  color: #888;
+}

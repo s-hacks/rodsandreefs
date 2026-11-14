@@ -1,0 +1,16 @@
+.rr-local {
+  border-left: 4px solid #2e7d32;
+  padding-left: 12px;
+  margin-bottom: 16px;
+}
+
+.rr-local::before {
+  content: "\2605  Local \00B7  " attr(data-rr-reason);
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e8f5e9;
+  color: #1b5e20;
+  font: 600 12px/1.6 system-ui, sans-serif;
+}
