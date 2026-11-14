@@ -62,7 +62,7 @@ export default function App() {
             ★
           </span>
           <div>
-            <h1>Shop Local</h1>
+            <h1>Local Look</h1>
             <p>Independent shops first.</p>
           </div>
         </div>
@@ -127,8 +127,13 @@ function Status({ enabled, stats }: { enabled: boolean | null; stats: PageStats 
   if (stats.status === 'error') {
     return (
       <p className="note error">
-        Can't reach the Shop Local server. Start it with <code>npm run dev:web</code>, then reload
-        the page.
+        Can't reach the Local Look server. Check your connection, then reload the page.
+        {import.meta.env.DEV && (
+          <>
+            {' '}
+            In dev, start it with <code>npm run dev:web</code>.
+          </>
+        )}
       </p>
     );
   }

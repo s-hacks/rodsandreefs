@@ -4,13 +4,15 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: ({ browser }) => ({
-    name: 'Shop Local',
+    name: 'Local Look',
     description: 'Puts local businesses at the top of your search results.',
     permissions: ['storage'],
     // The background worker calls our API; a host permission avoids CORS issues.
     host_permissions: [
       'http://localhost:3000/*',
       'http://127.0.0.1:3000/*',
+      // The deployed API (PROD_API_URL in utils/config.ts).
+      'https://local-look.vercel.app/*',
       // A deployed API: build with WXT_API_BASE_URL=https://your-app.vercel.app
       ...(process.env.WXT_API_BASE_URL
         ? [`${new URL(process.env.WXT_API_BASE_URL).origin}/*`]
@@ -20,14 +22,14 @@ export default defineConfig({
     commands: {
       'toggle-local': {
         suggested_key: { default: 'Alt+Shift+L' },
-        description: 'Turn Shop Local on or off',
+        description: 'Turn Local Look on or off',
       },
     },
     // Firefox wants a stable ID (storage) and a data-collection statement.
     ...(browser === 'firefox' && {
       browser_specific_settings: {
         gecko: {
-          id: 'shop-local@rodsandreefs',
+          id: 'local-look@rodsandreefs',
           data_collection_permissions: { required: ['none'] },
         },
       },

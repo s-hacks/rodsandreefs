@@ -13,7 +13,7 @@ export default defineBackground(() => {
     rank(message.payload)
       .then((data) => sendResponse({ ok: true, data } satisfies BackgroundReply))
       .catch((err) => {
-        console.error('[shop-local] rank failed', err);
+        console.error('[local-look] rank failed', err);
         sendResponse({ ok: false, error: String(err) } satisfies BackgroundReply);
       });
     // Keep the channel open for the async sendResponse (required in Chrome).

@@ -47,10 +47,10 @@ Reordering organic links alone won't deliver the demo. The highest-impact target
 - Handled: organic links, the Places pack (badge, chains sunk), sponsored blocks (collapsed), plus an injected "Local picks" panel. The toggle applies live and reverts the page exactly.
 - **Search engines:** Google (`entrypoints/google.content.ts`) and DuckDuckGo (`entrypoints/duckduckgo.content.ts`, verified live). Each only scrapes its own markup. All page changes live in `utils/engine.ts`. DuckDuckGo shows no location, but its map module (Apple Maps, located from the IP and not stored) loads a few seconds late, and the script re-runs when it appears. To add an engine, write a new `*.content.ts` that returns a `Scrape`.
 - **Extras:** Alt+Shift+L toggles from any page (`commands` in `wxt.config.ts`), a toast reports what changed, and the popup keeps a running total (`totalItem`).
-- **Deploying the API:** import the repo in Vercel with root directory `apps/web`, then build the extension with `WXT_API_BASE_URL=https://<app>.vercel.app`. That one variable sets the API URL and the host permission.
+- **Deployed:** the API and download page are at https://local-look.vercel.app (Vercel project `locallife`, domain added with `vercel domains add`; root directory `apps/web`; Git auto-deploy isn't connected, so deploy with `npx vercel --prod` from the repo root). Extension builds call it by default; `npm run dev` calls localhost. `npm run release` rebuilds the zips in `apps/web/public/` that the page offers.
 - **City:** taken from the page, then from a city named in the query, then from the "Your city" box in the popup (`cityItem`).
 - The Places pack and ad selectors in `SELECTORS` are from memory of Google's markup. If the picks panel doesn't appear on a live page, those are the first thing to fix.
-- For debugging, open DevTools on the results page and filter the console by `[shop-local]` to see results found, the API reply and boosted results.
+- For debugging, open DevTools on the results page and filter the console by `[local-look]` to see results found, the API reply and boosted results.
 - WXT's dev server is pinned to port 3001. On its default (3000) it shadowed the API on `localhost` and every rank call returned 404.
 
 ## Architecture

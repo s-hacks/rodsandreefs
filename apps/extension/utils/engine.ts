@@ -14,7 +14,7 @@ import '@/assets/page.css';
 // engine's content script only scrapes its own markup into a `Scrape`.
 
 const MAX_PICKS = 6;
-export const log = (...args: unknown[]) => console.log('[shop-local]', ...args);
+export const log = (...args: unknown[]) => console.log('[local-look]', ...args);
 
 export interface ResultBlock {
   /** The element that gets moved. */
